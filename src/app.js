@@ -23,8 +23,9 @@ function createApp(config = {}) {
   app.post('/freeswitch/dialplan', (req, res) => {
     const destination = req.body.destination_number || req.query.destination_number || '1000';
     const context = req.body.context || req.query.context || 'default';
+    const domain = req.body.domain || req.query.domain || req.body.domain_name || 'default';
 
-    const xml = buildDialplanXml({ destination, context });
+    const xml = buildDialplanXml({ destination, context, domain });
     res.type('application/xml').send(xml);
   });
 

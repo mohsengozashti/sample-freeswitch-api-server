@@ -27,19 +27,20 @@ function buildDirectoryXml({ user, domain, password }) {
   return document;
 }
 
-function buildDialplanXml({ destination, context }) {
+function buildDialplanXml({ destination, context, domain }) {
   const sanitizedDestination = destination || '1000';
+  const sanitizedDomain = domain || 'default';
 
   const document = create({ version: '1.0', encoding: 'UTF-8' })
     .ele('document', { type: 'freeswitch/xml' })
     .ele('section', { name: 'dialplan' })
     .ele('context', { name: context })
-    .ele('extension', { name: `Dial ${sanitizedDestination}` })
+    .ele('extension', { name: `Bridge ${sanitizedDestination}` })
     .ele('condition', { field: 'destination_number', expression: `^${sanitizedDestination}$` })
-    .ele('action', { application: 'answer' }).up()
-    .ele('action', { application: 'sleep', data: '1000' }).up()
-    .ele('action', { application: 'playback', data: 'local_stream://moh' }).up()
-    .ele('action', { application: 'hangup' }).up()
+    .ele('action', { application: 'export', data: `dialed_ext=${sanitizedDestination}` }).up()
+    .ele('action', { application: 'set', data: 'continue_on_fail=true' }).up()
+    .ele('action', { application: 'bridge', data: `user/${sanitizedDestination}@${sanitizedDomain}` }).up()
+    .ele('action', { application: 'hangup', data: 'NO_ROUTE_DESTINATION' }).up()
     .up()
     .up()
     .up()

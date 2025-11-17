@@ -6,7 +6,7 @@ This repository provides a minimal Express server that can be used by FreeSWITCH
 
 - Basic authentication on all FreeSWITCH endpoints.
 - `/freeswitch/directory` returns a directory document containing the requested user with a static `1234` password.
-- `/freeswitch/dialplan` returns a simple dialplan that matches the requested destination number.
+- `/freeswitch/dialplan` returns a simple dialplan that bridges the requested destination number to a registered user.
 - JSON and URL-encoded payloads are supported, matching the default payload `mod_xml_curl` sends.
 
 ## Getting started
@@ -55,18 +55,55 @@ The response contains the user passed in the request with password `1234`.
 
 ### Dialplan lookup
 
-POST to `/freeswitch/dialplan` with a `destination_number` and optional `context`:
+POST to `/freeswitch/dialplan` with a `destination_number` and optional `context`/`domain`:
 
 ```bash
 curl -u admin:secret \
   -X POST http://localhost:3000/freeswitch/dialplan \
-  -d "destination_number=1000&context=default"
+  -d "destination_number=1000&context=default&domain=example.com"
 ```
 
-The response is a basic dialplan XML document with a single extension that answers, pauses briefly, plays hold music, and hangs up.
+The response is a basic dialplan XML document with a single extension that bridges to `user/DESTINATION@DOMAIN`, enabling users registered to the same domain to call each other. If the bridge fails, the call is hung up with `NO_ROUTE_DESTINATION`.
 
 ## Notes
 
 - By default the API credentials are `admin` / `secret`. Update these via environment variables for production.
 - The directory response always uses `1234` as the password for the requested user to satisfy the sample requirement.
 - The server currently returns static dialplan actions meant for demonstration; adjust the generated XML in `src/lib/xmlResponses.js` to fit your needs.
+
+## Configuring FreeSWITCH `mod_xml_curl`
+
+Point your FreeSWITCH instance at the API endpoints and supply the same basic-auth credentials you configured in the `.env` file (`API_USERNAME` / `API_PASSWORD`). Below is a minimal `xml_curl.conf.xml` snippet that assumes the server runs at `http://192.168.7.85:3000` with the default credentials (`admin` / `secret`):
+
+```xml
+<configuration name="xml_curl.conf" description="cURL XML Gateway">
+  <bindings>
+    <binding name="directory">
+      <param name="gateway-url" value="http://192.168.7.85:3000/freeswitch/directory" />
+      <param name="auth-username" value="admin" />
+      <param name="auth-password" value="secret" />
+      <param name="method" value="post" />
+    </binding>
+
+    <binding name="dialplan">
+      <param name="gateway-url" value="http://192.168.7.85:3000/freeswitch/dialplan" />
+      <param name="auth-username" value="admin" />
+      <param name="auth-password" value="secret" />
+      <param name="method" value="post" />
+    </binding>
+  </bindings>
+</configuration>
+```
+
+After updating the configuration:
+
+1. Restart or reload FreeSWITCH (e.g., `fs_cli -x reloadxml`).
+2. Confirm the API responds with the same credentials using `curl`:
+
+   ```bash
+   curl -u admin:secret \
+     -X POST http://192.168.7.85:3000/freeswitch/directory \
+     -d "user=1011&domain=192.168.9.99"
+   ```
+
+If FreeSWITCH logs an HTTP 401, double-check that `API_USERNAME` and `API_PASSWORD` in the API server match the `auth-username` and `auth-password` values in `xml_curl.conf.xml`, and that the server host/port are reachable from FreeSWITCH.
