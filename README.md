@@ -22,6 +22,7 @@ This repository provides a minimal Express server that can be used by FreeSWITCH
    ```bash
    API_USERNAME=admin
    API_PASSWORD=secret
+   HOST=0.0.0.0
    PORT=3000
    ```
 
@@ -29,6 +30,13 @@ This repository provides a minimal Express server that can be used by FreeSWITCH
 
    ```bash
    npm start
+   ```
+
+   By default the server binds to `0.0.0.0`, which makes it reachable from other devices on your local network. To bind to a specific
+   network interface (for example, `192.168.7.7`), set `HOST` in your `.env` file:
+
+   ```bash
+   HOST=192.168.7.7
    ```
 
 ## Endpoint usage
