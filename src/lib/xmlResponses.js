@@ -53,7 +53,16 @@ function buildDialplanXml({ destination, context, domain }) {
   return document
 }
 
+function emptyFSResponse() {
+  const document = create({ version: '1.0', encoding: 'UTF-8' })
+    .ele('document', { type: 'freeswitch/xml' })
+    .up()
+    .end({ prettyPrint: true });
+  return document;
+}
+
 module.exports = {
   buildDirectoryXml,
   buildDialplanXml,
+  emptyFSResponse,
 }
