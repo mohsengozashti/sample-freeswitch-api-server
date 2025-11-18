@@ -1,14 +1,18 @@
-const { create } = require('xmlbuilder2');
+const { create } = require('xmlbuilder2')
 
 function buildDirectoryXml({ user, domain, password }) {
   const document = create({ version: '1.0', encoding: 'UTF-8' })
     .ele('document', { type: 'freeswitch/xml' })
     .ele('section', { name: 'directory' })
-    .ele('domain', { name: domain })
+    .ele('domain', { name: domain || "$${domain}" })
     .ele('user', { id: user })
     .ele('params')
     .ele('param', { name: 'password', value: password }).up()
     .ele('param', { name: 'vm-password', value: password }).up()
+    .ele('param', {
+      name: 'dial-string',
+      value: '{sip_invite_domain=${domain_name},presence_id=${dialed_user}@${dialed_domain}}${sofia_contact(${dialed_user}@${dialed_domain})}',
+    }).up()
     .up()
     .ele('variables')
     .ele('variable', { name: 'toll_allow', value: 'domestic,international,local' }).up()
@@ -22,14 +26,14 @@ function buildDirectoryXml({ user, domain, password }) {
     .up()
     .up()
     .up()
-    .end({ prettyPrint: true });
+    .end({ prettyPrint: true })
 
-  return document;
+  return document
 }
 
 function buildDialplanXml({ destination, context, domain }) {
-  const sanitizedDestination = destination || '1000';
-  const sanitizedDomain = domain || 'default';
+  const sanitizedDestination = destination || '1000'
+  const sanitizedDomain = domain || 'default'
 
   const document = create({ version: '1.0', encoding: 'UTF-8' })
     .ele('document', { type: 'freeswitch/xml' })
@@ -44,12 +48,12 @@ function buildDialplanXml({ destination, context, domain }) {
     .up()
     .up()
     .up()
-    .end({ prettyPrint: true });
+    .end({ prettyPrint: true })
 
-  return document;
+  return document
 }
 
 module.exports = {
   buildDirectoryXml,
   buildDialplanXml,
-};
+}

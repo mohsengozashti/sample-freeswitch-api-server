@@ -13,6 +13,7 @@ function createApp(config = {}) {
   app.use('/freeswitch', auth(username, password));
 
   app.post('/freeswitch/directory', (req, res) => {
+    console.log(req.body);
     const user = req.body.user || req.query.user || '1000';
     const domain = req.body.domain || req.query.domain || req.body.domain_name || 'default';
 
